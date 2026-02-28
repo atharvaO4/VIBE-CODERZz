@@ -2,7 +2,10 @@
 // Central API service — all backend calls go through here
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({ 
+  // This points to your live Railway backend URL
+  baseURL: 'https://vibe-coderzz-production.up.railway.app/api' 
+});
 
 // Attach JWT token to every request
 api.interceptors.request.use(config => {
