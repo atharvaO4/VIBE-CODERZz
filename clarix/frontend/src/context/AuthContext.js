@@ -1,6 +1,6 @@
 // src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin, register as apiRegister, getMe } from '../services/api';
+import { login as apiLogin, register as apiRegister, googleLogin as apiGoogleLogin, getMe, updateProfile as apiUpdateProfile } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -35,13 +35,29 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   };
 
+  const googleLogin = async (credential) => {
+    const res = await apiGoogleLogin(credential);
+    localStorage.setItem('clarix_token', res.data.token);
+    setUser(res.data.user);
+    return res.data.user;
+  };
+
   const logout = () => {
     localStorage.removeItem('clarix_token');
     setUser(null);
   };
 
+  const updateProfile = async (data) => {
+    const res = await apiUpdateProfile(data);
+    const updated = res.data.user;
+    // Normalize id field so it matches login/getMe shape
+    if (updated && !updated.id && updated._id) updated.id = updated._id;
+    setUser(prev => ({ ...prev, ...updated }));
+    return updated;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

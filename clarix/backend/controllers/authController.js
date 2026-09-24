@@ -1,6 +1,9 @@
 // controllers/authController.js
 const jwt  = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper: generate JWT
 const signToken = (id) =>
@@ -44,6 +47,52 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @route  POST /api/auth/google
+exports.googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential)
+      return res.status(400).json({ success: false, message: 'Google credential missing.' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { sub, email, name, picture, email_verified } = ticket.getPayload();
+
+    if (!email || !email_verified)
+      return res.status(401).json({ success: false, message: 'Google email not verified.' });
+
+    let user = await User.findOne({ $or: [{ googleId: sub }, { email: email.toLowerCase() }] });
+
+    if (!user) {
+      const initials = (name || email).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        googleId: sub,
+        authProvider: 'google',
+        avatar: picture || initials,
+        role: 'student',
+      });
+    } else if (!user.googleId) {
+      // Link existing email/password account to Google
+      user.googleId = sub;
+      user.authProvider = 'google';
+      if (picture && !user.avatar) user.avatar = picture;
+      await user.save();
+    }
+
+    res.json({
+      success: true,
+      token:   signToken(user._id),
+      user:    { id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar }
+    });
+  } catch (err) {
+    res.status(401).json({ success: false, message: err.message || 'Google sign-in failed.' });
   }
 };
 

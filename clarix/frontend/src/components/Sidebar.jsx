@@ -1,45 +1,73 @@
+// src/components/Sidebar.jsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const NAV_ITEMS = {
+  student: [
+    { icon: '🏠', label: 'Dashboard',    path: '/student/dashboard' },
+    { icon: '🗺️', label: 'My Roadmap',   path: '/roadmap' },
+    { icon: '🤝', label: 'Find Mentors', path: '/student/mentors' },
+    { icon: '📅', label: 'Events',       path: '/events' },
+    { icon: '💬', label: 'Messages',     path: '/messages' },
+    { icon: '👤', label: 'Profile',      path: '/profile' },
+  ],
+  senior: [
+    { icon: '🏠', label: 'Dashboard', path: '/senior/dashboard' },
+    { icon: '📅', label: 'Events',    path: '/events' },
+    { icon: '💬', label: 'Messages',  path: '/messages' },
+    { icon: '👤', label: 'Profile',   path: '/profile' },
+  ],
+  admin: [
+    { icon: '🏠', label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: '📅', label: 'Events',    path: '/events' },
+    { icon: '💬', label: 'Messages',  path: '/messages' },
+    { icon: '👤', label: 'Profile',   path: '/profile' },
+  ],
+};
 
 const Sidebar = () => {
-  // You can easily change these links later based on the user's role!
-  const navItems = [
-    { id: 'dashboard', icon: '🏠', label: 'Dashboard', path: '/student/dashboard' },
-    { id: 'roadmap', icon: '🗺️', label: 'My Roadmap', path: '/roadmap' },
-    { id: 'mentors', icon: '🤝', label: 'Find Mentors', path: '/student/mentors' },
-  ];
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const role = user?.role || 'student';
+  const navItems = NAV_ITEMS[role] || NAV_ITEMS.student;
+  const initial = (user?.name || 'U').trim()[0].toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
-    <aside className="sidebar" style={{ width: '240px', borderRight: '1px solid var(--border)', background: 'var(--surface)', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+    <aside className="sidebar">
       {/* Logo Area */}
-      <div className="sidebar-logo" style={{ padding: '24px 20px 16px', fontFamily: 'Syne, sans-serif', fontSize: '18px', fontWeight: 800, borderBottom: '1px solid var(--border)' }}>
+      <div className="sidebar-logo">
         CLA<span style={{ color: 'var(--accent)' }}>RIX</span>
       </div>
 
-      {/* User Profile Snippet */}
-      <div className="sidebar-user" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border)' }}>
-        <div className="avatar avatar-purple" style={{ width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, backgroundColor: 'rgba(108,99,255,.25)', color: '#a89dff' }}>
-          P
+      {/* User Profile Snippet (clickable → profile) */}
+      <Link
+        to="/profile"
+        className="sidebar-user"
+        style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+      >
+        <div className="avatar avatar-purple">{initial}</div>
+        <div className="user-info">
+          <div className="user-name">{user?.name || 'Guest'}</div>
+          <div className="user-role">{role}</div>
         </div>
-        <div className="user-info" style={{ overflow: 'hidden' }}>
-          <div className="user-name" style={{ fontSize: '14px', fontWeight: 600 }}>Priya Sharma</div>
-          <div className="user-role" style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'capitalize' }}>student</div>
-        </div>
-      </div>
+      </Link>
 
       {/* Navigation Links */}
-      <nav className="nav-section" style={{ padding: '16px 12px 8px' }}>
-        <div className="nav-label" style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', padding: '0 8px', marginBottom: '4px', textTransform: 'uppercase' }}>
-          Menu
-        </div>
-        
+      <nav className="nav-section">
+        <div className="nav-label">Menu</div>
         {navItems.map((item) => (
-          <Link 
-            key={item.id} 
-            to={item.path} 
-            className="nav-item" 
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '10px', textDecoration: 'none', color: 'var(--muted)', fontSize: '14px', fontWeight: 500 }}
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`nav-item${location.pathname === item.path ? ' active' : ''}`}
           >
             <span className="nav-icon">{item.icon}</span> {item.label}
           </Link>
@@ -47,12 +75,11 @@ const Sidebar = () => {
       </nav>
 
       {/* Logout Button */}
-      <div className="sidebar-bottom" style={{ marginTop: 'auto', padding: '16px 12px', borderTop: '1px solid var(--border)' }}>
-        <button className="nav-item" style={{ width: '100%', color: 'var(--accent2)', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
+      <div className="sidebar-bottom">
+        <button className="nav-item" style={{ color: 'var(--accent2)' }} onClick={handleLogout}>
           <span className="nav-icon">🚪</span> Log Out
         </button>
       </div>
-
     </aside>
   );
 };
