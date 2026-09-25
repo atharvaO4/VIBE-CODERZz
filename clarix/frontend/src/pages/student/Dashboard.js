@@ -24,11 +24,12 @@ const StudentDashboard = () => {
           getMyRequests()   // Step 9.4
         ]);
 
-        setRoadmap(roadmapRes.data || null);
-        setEvents(eventsRes.data || []);
+        setRoadmap(roadmapRes.data?.roadmap || null);
+        setEvents(eventsRes.data?.events || []);
         
         // Check if any request is accepted to find the connected mentor
-        const acceptedRequest = requestsRes.data?.find(req => req.status === 'accepted');
+        const requests = requestsRes.data?.requests || [];
+        const acceptedRequest = requests.find(req => req.status === 'accepted');
         setMentorData(acceptedRequest ? acceptedRequest.mentor : null);
 
       } catch (error) {
